@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}סיכום גביה{% endblock %}
+
+{% block content %}
+<style>
+    /* סגנונות ספציפיים לדף סיכום גבייה */
+    .stats-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-radius: 10px;
+        border-top: none;
+        border-right: none;
+        border-bottom: none;
+        border-left: 5px solid;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.9;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    
+    /* צבעים ספציפיים */
+    .text-purple {
+        color: #8a2be2 !important;
+    }
+    
+    .border-purple {
+        border-color: #8a2be2 !important;
+    }
+
+    /* פתרון בעיית צבע כותרות בטבלה */
+    .table-dark {
+        color: white !important;
+    }
+    
+    .collection-table th {
+        color: white !important;
+    }
+    
+    tr.table-dark th {
+        color: white !important;
+    }
+    
+    /* עדיפות גבוהה ביותר לכותרות טבלה */
+    #collection-table thead tr th,
+    #collection-table tfoot tr th {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- קוביות סטטיסטיקה -->
+    <div class="row mb-4">
+        <!-- סה"כ לגבייה -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">סה"כ לגבייה</h6>
+                            <h2 class="stat-value text-warning mb-0">{{ totals.balance_due|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-warning">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- סה"כ רייק -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">סה"כ רייק</h6>
+                            <h2 class="stat-value text-primary mb-0">{{ totals.total_rake|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-primary">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- רייק נטו -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">רייק נטו</h6>
+                            <h2 class="stat-value text-success mb-0">{{ (totals.total_rake - totals.player_rakeback - totals.agent_rakeback)|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- מספר שחקנים -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">מספר שחקנים</h6>
+                            <h2 class="stat-value text-info mb-0">{{ players_count }}</h2>
+                        </div>
+                        <div class="stat-icon text-info">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- רייק באק סוכן -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">רייק באק סוכן</h6>
+                            <h2 class="stat-value text-danger mb-0">{{ totals.agent_rakeback|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-danger">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- רייק באק שחקן -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-purple">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">רייק באק שחקן</h6>
+                            <h2 class="stat-value text-purple mb-0">{{ totals.player_rakeback|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-purple">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- סה"כ רייק באק -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card stats-card h-100 border-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">סה"כ רייק באק</h6>
+                            <h2 class="stat-value text-dark mb-0">{{ (totals.player_rakeback + totals.agent_rakeback)|format_currency|safe }}</h2>
+                        </div>
+                        <div class="stat-icon text-dark">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">סיכום גביה - {{ current_month_name }}</h4>
+                    <div>
+                        <form class="d-inline-block" method="GET">
+                            <div class="input-group">
+                                <select class="form-select" name="month" id="month-select">
+                                    {% for month_num, month_name in months %}
+                                    <option value="{{ month_num }}" {% if month_num == selected_month %}selected{% endif %}>{{ month_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-primary" type="submit">הצג</button>
+                            </div>
+                        </form>
+                        <a href="{{ url_for('collection_summary_export') }}" class="btn btn-success ms-2">
+                            <i class="fas fa-file-excel"></i> ייצוא לאקסל
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover collection-table" id="collection-table">
+                            <thead>
+                                <tr style="background-color: #343a40 !important;">
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">שם סופר-אייג'נט</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">סה"כ רייק</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">רייק באק שחקן</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">רייק באק סוכן</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">העברות (תקבולים)</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">העברות (תשלומים)</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">יתרה לגביה</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">סטטוס</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agent in agents_summary %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('super_agent_details', super_agent_name=agent.name) }}">
+                                            {{ agent.name }}
+                                        </a>
+                                    </td>
+                                    <td class="text-end">{{ agent.total_rake|format_currency|safe }}</td>
+                                    <td class="text-end">{{ agent.player_rakeback|format_currency|safe }}</td>
+                                    <td class="text-end">{{ agent.agent_rakeback|format_currency|safe }}</td>
+                                    <td class="text-end">{{ agent.received_transfers|format_currency|safe }}</td>
+                                    <td class="text-end">{{ agent.sent_transfers|format_currency|safe }}</td>
+                                    <td class="text-end fw-bold {% if agent.balance_due < 0 %}text-danger{% elif agent.balance_due > 0 %}text-success{% endif %}">
+                                        {{ agent.balance_due|format_currency|safe }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if agent.balance_due == 0 %}
+                                            <span class="badge bg-success">מאוזן</span>
+                                        {% elif agent.balance_due > 0 %}
+                                            <span class="badge bg-warning">לגבייה</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">חוב</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color: #343a40 !important;">
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;">סה"כ</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.total_rake|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.player_rakeback|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.agent_rakeback|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.received_transfers|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.sent_transfers|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important; text-align: left;">{{ totals.balance_due|format_currency|safe }}</th>
+                                    <th style="color: #ffffff !important; background-color: #343a40 !important; font-weight: bold !important;"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- הסבר על החישוב -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">אופן החישוב</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>יתרה לגביה</strong> = סה"כ רייק - רייק באק שחקן - רייק באק סוכן + העברות (תקבולים) - העברות (תשלומים)
+                    </p>
+                    <ul>
+                        <li><strong>יתרה חיובית (מספר חיובי)</strong>: המועדון צריך לגבות כסף מהסופר-אייג'נט</li>
+                        <li><strong>יתרה שלילית (מספר שלילי)</strong>: המועדון צריך לשלם לסופר-אייג'נט</li>
+                        <li><strong>יתרה = 0</strong>: אין חובות/זכויות בין המועדון לסופר-אייג'נט</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // טבלה עם חיפוש ומיון
+        $('#collection-table').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Hebrew.json"
+            },
+            "order": [[ 6, "desc" ]],  // מיון לפי עמודת יתרה לגביה
+            "pageLength": 25
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

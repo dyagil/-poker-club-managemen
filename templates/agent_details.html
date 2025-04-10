@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-user-tie me-2"></i>פרטי אייג'נט</h1>
+    <a href="{{ url_for('agents') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לרשימת האייג'נטים
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>פרטי אייג'נט</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div style="width: 100px; height: 100px; background-color: #e9ecef; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 3rem; color: #6c757d;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h4 class="mt-3">{{ agent.name }}</h4>
+                </div>
+                
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>סופר-אייג'נט</span>
+                        <span class="fw-bold">{{ agent.super_agent }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>מספר שחקנים</span>
+                        <span class="fw-bold">{{ agent.players_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>סה"כ לגבייה</span>
+                        <span class="fw-bold text-danger">₪{{ '{:,}'.format(agent.total_to_collect|int|abs) }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>סה"כ תשלומים</span>
+                        <span class="fw-bold">₪{{ '{:,}'.format(total_paid|int) }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>סטטיסטיקה</h5>
+            </div>
+            <div class="card-body">
+                {% if payments %}
+                <div style="height: 200px;">
+                    <canvas id="paymentsDistributionChart"></canvas>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין מספיק נתונים להצגת סטטיסטיקה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>רשימת שחקנים</h5>
+                <div class="d-flex">
+                    <a href="{{ url_for('export_agent_excel', agent_name=agent.name) }}" class="btn btn-success btn-sm ms-2">
+                        <i class="fas fa-file-excel me-1"></i> ייצוא לאקסל
+                    </a>
+                    <div class="input-group" style="max-width: 200px;">
+                        <input type="text" class="form-control form-control-sm" id="playerSearch" placeholder="חיפוש שחקן...">
+                        <button class="btn btn-outline-secondary btn-sm" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if players %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="playersTable">
+                        <thead>
+                            <tr>
+                                <th>קוד שחקן</th>
+                                <th>שם שחקן</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in players %}
+                            <tr>
+                                <td>{{ player['קוד שחקן'] }}</td>
+                                <td>{{ player['שם שחקן'] }}</td>
+                                <td>
+                                    <a href="{{ url_for('player_details', player_id=player['קוד שחקן']) }}" class="btn btn-sm btn-info text-white">
+                                        <i class="fas fa-eye"></i> צפייה
+                                    </a>
+                                    {% if session['role'] == 'admin' or session['role'] == 'agent' or session['role'] == 'super_agent' %}
+                                    <a href="{{ url_for('add_payment') }}?player_id={{ player['קוד שחקן'] }}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> תשלום
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין שחקנים משויכים לאייג'נט זה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>היסטוריית תשלומים</h5>
+            </div>
+            <div class="card-body">
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>שחקן</th>
+                                <th>סכום</th>
+                                <th>אמצעי תשלום</th>
+                                <th>הערות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set sorted_payments = payments|sort(attribute='payment_date', reverse=true) %}
+                            {% for payment in sorted_payments %}
+                            {% if loop.index <= 10 %}
+                            <tr>
+                                <td>{{ payment.payment_date|format_datetime }}</td>
+                                <td>{{ payment.player_name }}</td>
+                                <td>₪{{ '{:,}'.format(payment.amount|int) }}</td>
+                                <td>{{ payment.method }}</td>
+                                <td>{{ payment.notes }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if payments|length > 10 %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('payments') }}?agent={{ agent.name }}" class="btn btn-outline-primary btn-sm">
+                        צפייה בכל התשלומים <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין היסטוריית תשלומים לאייג'נט זה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- חיפוש בטבלת שחקנים -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('playerSearch');
+    const table = document.getElementById('playersTable');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) { // מתחיל מ-1 כדי לדלג על שורת הכותרת
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length - 1; j++) { // דילוג על עמודת הפעולות
+                    const cellText = cells[j].textContent.toLowerCase();
+                    
+                    if (cellText.includes(searchTerm)) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = found ? '' : 'none';
+            }
+        });
+    }
+});
+</script>
+
+{% if payments %}
+<!-- Chart.js - לגרף התפלגות -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // יצירת גרף התפלגות תשלומים
+    const ctx = document.getElementById('paymentsDistributionChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['תשלומים שהתקבלו', 'יתרה לגבייה'],
+            datasets: [{
+                data: [{{ total_paid|int }}, {{ agent.players_count * 1000 - total_paid|int }}], // דוגמה חישובית
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(255, 99, 132, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ₪' + context.raw.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

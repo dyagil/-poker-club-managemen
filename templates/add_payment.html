@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mt-4 mb-4"><i class="fas fa-plus-circle me-2"></i>רישום תשלום חדש</h1>
+
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- שחקן -->
+                    <div class="mb-3">
+                        <label for="player" class="form-label">שחקן</label>
+                        <input type="text" id="playerSearch" class="form-control mb-2" placeholder="חיפוש שחקן..." 
+                               onkeyup="filterPlayers()" style="direction: rtl;">
+                        <select class="form-select" id="player" required>
+                            <option value="">בחר שחקן...</option>
+                            {% for player in players %}
+                            <option value="{{ player['קוד שחקן']|string }}" data-name="{{ player['שם שחקן']|string }}">
+                                {{ player['קוד שחקן']|string }} - {{ player['שם שחקן']|string }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="player_id" id="player_id">
+                        <input type="hidden" name="player_name" id="player_name">
+                    </div>
+                    
+                    <!-- אייג'נט -->
+                    <div class="mb-3">
+                        <label for="agent_name" class="form-label">אייג'נט</label>
+                        {% if user_role == 'agent' %}
+                            <input type="text" class="form-control" id="agent_name" name="agent_name" 
+                                   value="{{ user_entity_id }}" readonly>
+                        {% else %}
+                            <select class="form-select" id="agent_name" name="agent_name" required>
+                                <option value="">בחר אייג'נט...</option>
+                                {% for agent in agents %}
+                                <option value="{{ agent }}">{{ agent }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- סופר-אייג'נט -->
+                    <div class="mb-3">
+                        <label for="super_agent_name" class="form-label">סופר-אייג'נט</label>
+                        {% if user_role == 'super_agent' or user_role == 'agent' %}
+                            <input type="text" class="form-control" id="super_agent_name" name="super_agent_name" 
+                                   value="{{ super_agents[0] if super_agents else '' }}" readonly>
+                        {% else %}
+                            <select class="form-select" id="super_agent_name" name="super_agent_name" required>
+                                <option value="">בחר סופר-אייג'נט...</option>
+                                {% for super_agent in super_agents %}
+                                <option value="{{ super_agent }}">{{ super_agent }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- סכום התשלום -->
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">סכום התשלום</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₪</span>
+                            <input type="number" class="form-control" id="amount" name="amount" required min="1" step="1">
+                        </div>
+                    </div>
+                    
+                    <!-- תאריך התשלום -->
+                    <div class="mb-3">
+                        <label for="payment_date" class="form-label">תאריך התשלום</label>
+                        <input type="date" class="form-control" id="payment_date" name="payment_date">
+                    </div>
+                    
+                    <!-- אמצעי תשלום -->
+                    <div class="mb-3">
+                        <label for="method" class="form-label">אמצעי תשלום</label>
+                        <select class="form-select" id="method" name="method" required>
+                            <option value="">בחר אמצעי תשלום...</option>
+                            <option value="העברה בנקאית">העברה בנקאית</option>
+                            <option value="מזומן">מזומן</option>
+                            <option value="אשראי">אשראי</option>
+                            <option value="צ'ק">צ'ק</option>
+                            <option value="אחר">אחר</option>
+                        </select>
+                    </div>
+                    
+                    <!-- הערות -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">הערות</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <!-- כפתורי שליחה וביטול -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">ביטול</a>
+                        <button type="submit" class="btn btn-primary">שמירת התשלום</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>הנחיות לרישום תשלום</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>בחר את השחקן המבצע את התשלום</li>
+                    <li>וודא שהאייג'נט והסופר-אייג'נט נכונים</li>
+                    <li>הזן את סכום התשלום</li>
+                    <li>בחר את התאריך בו בוצע התשלום (ברירת המחדל היא היום)</li>
+                    <li>בחר את אמצעי התשלום</li>
+                    <li>הוסף הערות רלוונטיות אם יש צורך</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// פונקציה לסינון שחקנים
+function filterPlayers() {
+    const searchText = document.getElementById('playerSearch').value.toLowerCase();
+    const options = document.querySelectorAll('#player option');
+    
+    options.forEach(option => {
+        if (option.value === '') return; // דילוג על אפשרות "בחר שחקן..."
+        
+        const optionText = option.textContent.toLowerCase();
+        if (optionText.includes(searchText)) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // הגדרת תאריך ברירת מחדל לשדה תאריך התשלום
+    const dateInput = document.getElementById('payment_date');
+    if (dateInput) {
+        // הגדרת היום כברירת מחדל
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.value = formattedDate;
+    }
+    
+    // עדכון שדות מוסתרים של השחקן
+    const playerSelect = document.getElementById('player');
+    const playerIdInput = document.getElementById('player_id');
+    const playerNameInput = document.getElementById('player_name');
+    
+    playerSelect.addEventListener('change', function() {
+        const selectedOption = playerSelect.options[playerSelect.selectedIndex];
+        if (selectedOption.value) {
+            playerIdInput.value = selectedOption.value;
+            playerNameInput.value = selectedOption.dataset.name;
+        } else {
+            playerIdInput.value = '';
+            playerNameInput.value = '';
+        }
+    });
+    
+    // סימון אוטומטי של שחקן, אייג'נט וסופר-אייג'נט אם הועברו בפרמטרים
+    const playerIdParam = "{{ player_id_param }}";
+    const agentParam = "{{ agent_param }}";
+    const superAgentParam = "{{ super_agent_param }}";
+    
+    // בחירת שחקן אוטומטית אם התקבל מזהה שחקן
+    if (playerIdParam) {
+        for (let i = 0; i < playerSelect.options.length; i++) {
+            if (playerSelect.options[i].value === playerIdParam) {
+                playerSelect.selectedIndex = i;
+                
+                // הפעלת האירוע change כדי לעדכן את השדות המוסתרים
+                const event = new Event('change');
+                playerSelect.dispatchEvent(event);
+                
+                break;
+            }
+        }
+    }
+    
+    // בחירת אייג'נט אוטומטית אם התקבל שם אייג'נט
+    const agentSelect = document.getElementById('agent_name');
+    if (agentParam && agentSelect && agentSelect.tagName === 'SELECT') {
+        for (let i = 0; i < agentSelect.options.length; i++) {
+            if (agentSelect.options[i].value === agentParam) {
+                agentSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    
+    // בחירת סופר-אייג'נט אוטומטית אם התקבל שם סופר-אייג'נט
+    const superAgentSelect = document.getElementById('super_agent_name');
+    if (superAgentParam && superAgentSelect && superAgentSelect.tagName === 'SELECT') {
+        for (let i = 0; i < superAgentSelect.options.length; i++) {
+            if (superAgentSelect.options[i].value === superAgentParam) {
+                superAgentSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

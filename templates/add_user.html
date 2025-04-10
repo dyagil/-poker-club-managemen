@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-user-plus me-2"></i>הוספת משתמש חדש</h1>
+    <a href="{{ url_for('users') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לרשימת המשתמשים
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- שם משתמש -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">שם משתמש</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="form-text">
+                            שם משתמש ייחודי שישמש להתחברות למערכת. מכיל אותיות ומספרים בלבד.
+                        </div>
+                    </div>
+                    
+                    <!-- סיסמה -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">סיסמה</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text">
+                            סיסמה חזקה מכילה לפחות 8 תווים, אותיות גדולות וקטנות, מספרים וסימנים מיוחדים.
+                        </div>
+                    </div>
+                    
+                    <!-- שם מלא -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label">שם מלא</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <!-- תפקיד -->
+                    <div class="mb-3">
+                        <label for="role" class="form-label">תפקיד</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">בחר תפקיד...</option>
+                            <option value="admin">מנהל מערכת</option>
+                            <option value="super_agent">סופר-אייג'נט</option>
+                            <option value="agent">אייג'נט</option>
+                            <option value="player">שחקן</option>
+                            <option value="user">משתמש</option>
+                        </select>
+                    </div>
+                    
+                    <!-- ישויות משויכות (מוצג רק כאשר התפקיד הוא אייג'נט או סופר-אייג'נט) -->
+                    <div class="mb-3" id="entityContainer" style="display: none;">
+                        <label for="entities" class="form-label">ישויות משויכות <span class="text-danger">*</span></label>
+                        
+                        <!-- תיבת החיפוש (תופיע רק כשבוחרים תפקיד שחקן) -->
+                        <div id="playerSearchContainer" style="display: none;">
+                            <input type="text" id="playerSearch" class="form-control mb-2" placeholder="חיפוש שחקן..." 
+                                  onkeyup="filterPlayers()" style="direction: rtl;">
+                        </div>
+                        
+                        <select class="form-select" id="entity_id" name="entities" multiple size="5" required>
+                            <option value="">בחר ישות...</option>
+                            
+                            <!-- אייג'נטים -->
+                            <optgroup label="אייג'נטים" id="agentGroup" style="display: none;">
+                                {% for agent in agents %}
+                                <option value="{{ agent }}">{{ agent }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            
+                            <!-- סופר-אייג'נטים -->
+                            <optgroup label="סופר-אייג'נטים" id="superAgentGroup" style="display: none;">
+                                {% for super_agent in super_agents %}
+                                <option value="{{ super_agent }}">{{ super_agent }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            
+                            <!-- שחקנים -->
+                            <optgroup label="שחקנים" id="playerGroup" style="display: none;">
+                                {% for player in players %}
+                                <option value="{{ player['קוד שחקן'] }}">{{ player['קוד שחקן'] }} - {{ player['שם שחקן'] }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                        <div class="form-text">
+                            <span id="entityExplanation">בחר את הישות המתאימה:</span>
+                            <ul>
+                                <li>עבור <strong>סופר-אייג'נט</strong>: <span class="text-danger">חובה לבחור ישות אחת לפחות</span></li>
+                                <li>עבור <strong>אייג'נט</strong>: בחר את הסופר-אייג'נט אליו הוא משויך</li>
+                                <li>עבור <strong>שחקן</strong>: בחר את האייג'נט אליו הוא משויך</li>
+                                <li>עבור <strong>משתמש</strong>: בחר את השחקן אליו הוא משויך</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- כפתורי שליחה וביטול -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('users') }}" class="btn btn-secondary">ביטול</a>
+                        <button type="submit" class="btn btn-primary">הוספת משתמש</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>הנחיות להוספת משתמש</h5>
+            </div>
+            <div class="card-body">
+                <p>משתמשים במערכת יכולים לצפות בנתונים בהתאם לתפקידם:</p>
+                <ul class="mb-3">
+                    <li><strong>מנהל מערכת</strong> - גישה מלאה לכל חלקי המערכת.</li>
+                    <li><strong>סופר-אייג'נט</strong> - גישה לנתונים של הסופר-אייג'נט ושל האייג'נטים שתחתיו.</li>
+                    <li><strong>אייג'נט</strong> - גישה לנתונים של האייג'נט בלבד ושל השחקנים שלו.</li>
+                    <li><strong>שחקן</strong> - גישה לנתונים של השחקן בלבד.</li>
+                    <li><strong>משתמש</strong> - גישה לנתונים של המשתמש בלבד.</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    שים לב! עבור משתמשים מסוג אייג'נט או סופר-אייג'נט, יש לבחור את הישות המתאימה מהרשימה.
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    הסיסמאות במערכת מוצפנות ולא ניתן לשחזר אותן. אם משתמש שכח את הסיסמה, יש ליצור משתמש חדש.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterPlayers() {
+    const input = document.getElementById('playerSearch');
+    const filter = input.value.toUpperCase();
+    const select = document.getElementById('entity_id');
+    const playerOptions = document.querySelectorAll('#playerGroup option');
+    
+    playerOptions.forEach(option => {
+        const text = option.textContent || option.innerText;
+        if (text.toUpperCase().indexOf(filter) > -1) {
+            option.style.display = "";
+        } else {
+            option.style.display = "none";
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const entityContainer = document.getElementById('entityContainer');
+    const agentGroup = document.getElementById('agentGroup');
+    const superAgentGroup = document.getElementById('superAgentGroup');
+    const playerGroup = document.getElementById('playerGroup');
+    const playerSearchContainer = document.getElementById('playerSearchContainer');
+    const entitySelect = document.getElementById('entity_id');
+    
+    roleSelect.addEventListener('change', function() {
+        // איפוס והסתרה של כל האפשרויות
+        entityContainer.style.display = 'none';
+        agentGroup.style.display = 'none';
+        superAgentGroup.style.display = 'none';
+        playerGroup.style.display = 'none';
+        playerSearchContainer.style.display = 'none';
+        
+        // תצוגת האפשרויות בהתאם לתפקיד הנבחר
+        if (roleSelect.value === 'agent') {
+            entityContainer.style.display = 'block';
+            agentGroup.style.display = 'block';
+            entitySelect.size = 5;
+            entitySelect.required = true;
+            entitySelect.multiple = true;
+            entitySelect.name = "entities";
+        } else if (roleSelect.value === 'super_agent') {
+            entityContainer.style.display = 'block';
+            superAgentGroup.style.display = 'block';
+            entitySelect.size = 5;
+            entitySelect.required = true;
+            entitySelect.multiple = true;
+            entitySelect.name = "entities";
+        } else if (roleSelect.value === 'player' || roleSelect.value === 'user') {
+            entityContainer.style.display = 'block';
+            playerGroup.style.display = 'block';
+            playerSearchContainer.style.display = 'block';
+            entitySelect.size = 5;
+            entitySelect.required = true;
+            entitySelect.multiple = true;
+            entitySelect.name = "entities";
+            filterPlayers();
+        } else {
+            // מנהל מערכת - לא דורש ישות
+            entitySelect.required = false;
+            entitySelect.multiple = false;
+            entitySelect.name = "entities";  
+        }
+    });
+});
+</script>
+{% endblock %}

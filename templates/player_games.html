@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-gamepad me-2"></i>משחקים של {{ player['כינוי שחקן'] }}</h1>
+    <a href="{{ url_for('player_details', player_id=player['קוד שחקן']) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לכרטיס שחקן
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-gamepad me-2"></i>רשימת משחקים</h5>
+                    <div>
+                        <a href="{{ url_for('export_player_games', player_id=player['קוד שחקן'], game_type=selected_game_type) }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-file-excel me-1"></i> ייצוא לאקסל
+                        </a>
+                        <span class="badge bg-light text-dark ms-2">סה"כ משחקים: {{ games|length }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if games %}
+                    <!-- טאבים לסוגי המשחקים -->
+                    <ul class="nav nav-tabs mb-4" id="gameTypeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-games" type="button" role="tab" aria-controls="all-games" aria-selected="true">
+                                <i class="fas fa-list me-1"></i> כל המשחקים <span class="badge bg-primary">{{ games|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tournaments-tab" data-bs-toggle="tab" data-bs-target="#tournaments" type="button" role="tab" aria-controls="tournaments" aria-selected="false">
+                                <i class="fas fa-trophy me-1"></i> טורנירים <span class="badge bg-success">{{ games|selectattr('סוג משחק', 'equalto', 'טורניר')|list|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cash-tab" data-bs-toggle="tab" data-bs-target="#cash-games" type="button" role="tab" aria-controls="cash-games" aria-selected="false">
+                                <i class="fas fa-coins me-1"></i> משחקי קאש <span class="badge bg-warning text-dark">{{ games|selectattr('סוג משחק', 'equalto', 'קאש')|list|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-view" type="button" role="tab" aria-controls="stats-view" aria-selected="false">
+                                <i class="fas fa-chart-pie me-1"></i> סטטיסטיקות מתקדמות
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- תוכן הטאבים -->
+                    <div class="tab-content" id="gameTypeTabsContent">
+                        <!-- כל המשחקים -->
+                        <div class="tab-pane fade show active" id="all-games" role="tabpanel" aria-labelledby="all-tab">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h5 class="mb-0">סה"כ באלנס</h5>
+                                                    <small>כל המשחקים</small>
+                                                </div>
+                                                <h3 class="{% if games|sum(attribute='באלנס') < 0 %}text-danger{% elif games|sum(attribute='באלנס') > 0 %}text-success{% endif %}">
+                                                    ₪{{ '{:,}'.format(games|sum(attribute='באלנס')|default(0)|int) }}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="allGamesTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>תאריך</th>
+                                            <th>שם משחק</th>
+                                            <th>סוג משחק</th>
+                                            <th>באלנס</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for game in games %}
+                                        <tr>
+                                            <td>{{ game['תאריך']|format_datetime if game['תאריך'] else '-' }}</td>
+                                            <td>{{ game['שם משחק'] }}</td>
+                                            <td>
+                                                {% if game['סוג משחק'] == 'טורניר' %}
+                                                <span class="badge bg-success">{{ game['סוג משחק'] }}</span>
+                                                {% elif game['סוג משחק'] == 'קאש' %}
+                                                <span class="badge bg-warning text-dark">{{ game['סוג משחק'] }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ game['סוג משחק'] }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="{% if game['באלנס'] < 0 %}text-danger{% elif game['באלנס'] > 0 %}text-success{% endif %}">
+                                                <strong>₪{{ '{:,}'.format(game['באלנס']|int) }}</strong>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- טורנירים בלבד -->
+                        <div class="tab-pane fade" id="tournaments" role="tabpanel" aria-labelledby="tournaments-tab">
+                            {% set tournament_games = games|selectattr('סוג משחק', 'equalto', 'טורניר')|list %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h5 class="mb-0">סה"כ באלנס בטורנירים</h5>
+                                                    <small>{{ tournament_games|length }} משחקים</small>
+                                                </div>
+                                                <h3>₪{{ '{:,}'.format(tournament_games|sum(attribute='באלנס')|default(0)|int) }}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if tournament_games %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="tournamentsTable">
+                                        <thead class="table-success">
+                                            <tr>
+                                                <th>תאריך</th>
+                                                <th>שם טורניר</th>
+                                                <th>באלנס</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for game in tournament_games %}
+                                            <tr>
+                                                <td>{{ game['תאריך']|format_datetime if game['תאריך'] else '-' }}</td>
+                                                <td>{{ game['שם משחק'] }}</td>
+                                                <td class="{% if game['באלנס'] < 0 %}text-danger{% elif game['באלנס'] > 0 %}text-success{% endif %}">
+                                                    <strong>₪{{ '{:,}'.format(game['באלנס']|int) }}</strong>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> לא השתתפת בטורנירים
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- משחקי קאש בלבד -->
+                        <div class="tab-pane fade" id="cash-games" role="tabpanel" aria-labelledby="cash-tab">
+                            {% set cash_games = games|selectattr('סוג משחק', 'equalto', 'קאש')|list %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-warning">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h5 class="mb-0 text-dark">סה"כ באלנס במשחקי קאש</h5>
+                                                    <small class="text-dark">{{ cash_games|length }} משחקים</small>
+                                                </div>
+                                                <h3 class="text-dark">₪{{ '{:,}'.format(cash_games|sum(attribute='באלנס')|default(0)|int) }}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if cash_games %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="cashGamesTable">
+                                        <thead class="table-warning">
+                                            <tr>
+                                                <th>תאריך</th>
+                                                <th>שם משחק</th>
+                                                <th>באלנס</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for game in cash_games %}
+                                            <tr>
+                                                <td>{{ game['תאריך']|format_datetime if game['תאריך'] else '-' }}</td>
+                                                <td>{{ game['שם משחק'] }}</td>
+                                                <td class="{% if game['באלנס'] < 0 %}text-danger{% elif game['באלנס'] > 0 %}text-success{% endif %}">
+                                                    <strong>₪{{ '{:,}'.format(game['באלנס']|int) }}</strong>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> לא שיחקת במשחקי קאש
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- אזור הגרפים והסטטיסטיקות -->
+                        <div class="tab-pane fade" id="stats-view" role="tabpanel" aria-labelledby="stats-tab">
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <div class="card shadow border">
+                                        <div class="card-header bg-dark text-white">
+                                            <h5 class="mb-0">סינון סטטיסטיקות</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="stats-filter-form" class="row g-3 align-items-end">
+                                                <div class="col-md-4">
+                                                    <label for="start-date" class="form-label">מתאריך:</label>
+                                                    <input type="date" class="form-control" id="start-date">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="end-date" class="form-label">עד תאריך:</label>
+                                                    <input type="date" class="form-control" id="end-date">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <button type="button" id="apply-date-filter" class="btn btn-primary">החל סינון</button>
+                                                    <button type="button" id="reset-date-filter" class="btn btn-outline-secondary">איפוס</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col text-center py-4" id="stats-loading">
+                                    <h5>טעינת הסטטיסטיקות... אנא המתן</h5>
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">טוען...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="charts-container" style="display: none;">
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card shadow border">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5 class="mb-0">התפלגות סוגי משחקים</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="chart1" width="400" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card shadow border">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="mb-0">התפלגות תוצאות</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="chart2" width="400" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <div class="card shadow border">
+                                            <div class="card-header bg-info text-white">
+                                                <h5 class="mb-0">מגמת באלנס לאורך זמן</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="chart3" width="800" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="card shadow border">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h5 class="mb-0">השוואת מאזן לפי סוג משחק</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="chart4" width="800" height="300"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- נתונים לגרפים -->
+                            <div id="chart-data" style="display:none;">
+                                <div id="chart1-data">
+                                    טורנירים:{{ games|selectattr('סוג משחק', 'equalto', 'טורניר')|list|length }},
+                                    קאש:{{ games|selectattr('סוג משחק', 'equalto', 'קאש')|list|length }}
+                                </div>
+                                <div id="chart2-data">
+                                    רווח:{{ games|selectattr('באלנס', 'ge', 0)|list|length }},
+                                    הפסד:{{ games|selectattr('באלנס', 'lt', 0)|list|length }}
+                                </div>
+                                <div id="chart3-data">
+                                    {% for game in games|sort(attribute='תאריך') %}
+                                        {% if game['תאריך'] %}
+                                            <span class="game-date" data-raw-date="{{ game['תאריך'] }}">{{ game['תאריך']|format_datetime }}</span>
+                                            <span class="game-balance">{{ game['באלנס'] }}</span>
+                                            <span class="game-type">{{ game['סוג משחק'] }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div id="chart4-data">
+                                    <!-- חישוב באלנס לפי סוג משחק -->
+                                    <span class="tournament-balance">{{ games|selectattr('סוג משחק', 'equalto', 'טורניר')|map(attribute='באלנס')|sum }}</span>
+                                    <span class="cash-balance">{{ games|selectattr('סוג משחק', 'equalto', 'קאש')|map(attribute='באלנס')|sum }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> לא נמצאו משחקים לשחקן זה.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- JQuery, Popper & Bootstrap - עם גרסאות מעודכנות -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- Chart.js - עם גרסה מדויקת -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    console.log("Player games script loaded");
+    
+    // פונקציה שתיקרא רק אחרי שהדף נטען לחלוטין
+    $(document).ready(function() {
+        console.log("Document ready");
+        
+        // הגדרות DataTable משותפות
+        const tableSettings = {
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Hebrew.json"
+            },
+            "order": [[ 0, "desc" ]],  // מיון לפי תאריך מהחדש לישן
+            "pageLength": 15,
+            "responsive": true
+        };
+        
+        // יצירת טבלאות DataTable
+        if (document.getElementById('allGamesTable')) {
+            $('#allGamesTable').DataTable(tableSettings);
+        }
+        
+        if (document.getElementById('tournamentsTable')) {
+            $('#tournamentsTable').DataTable(tableSettings);
+        }
+        
+        if (document.getElementById('cashGamesTable')) {
+            $('#cashGamesTable').DataTable(tableSettings);
+        }
+        
+        // הצג טאב מתאים אם יש סינון פעיל
+        {% if selected_game_type == 'טורניר' %}
+            new bootstrap.Tab(document.getElementById('tournaments-tab')).show();
+        {% elif selected_game_type == 'קאש' %}
+            new bootstrap.Tab(document.getElementById('cash-tab')).show();
+        {% endif %}
+        
+        // האזנה למעבר לטאב הסטטיסטיקות
+        $('#stats-tab').on('click', function() {
+            console.log("Stats tab clicked");
+            setTimeout(createAllCharts, 500);
+        });
+
+        // הגדרת תאריכי ברירת מחדל לפילטר - 3 חודשים אחורה עד היום
+        function setDefaultDates() {
+            const today = new Date();
+            const threeMonthsAgo = new Date();
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            
+            // פורמט תאריכים ל-ISO לשדה input מסוג date
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            
+            $('#start-date').val(formatDate(threeMonthsAgo));
+            $('#end-date').val(formatDate(today));
+        }
+        
+        // הגדרת תאריכי ברירת מחדל
+        setDefaultDates();
+        
+        // אירוע לחיצה על כפתור החל סינון
+        $('#apply-date-filter').on('click', function() {
+            createAllCharts();
+        });
+        
+        // אירוע לחיצה על כפתור איפוס סינון
+        $('#reset-date-filter').on('click', function() {
+            setDefaultDates();
+            createAllCharts();
+        });
+        
+        // פונקציה לבדיקה אם משחק נמצא בטווח התאריכים שנבחר
+        function isGameInDateRange(gameDate) {
+            // המרת התאריך למחרוזת ISO
+            if (!gameDate) return false;
+            
+            const startDateStr = $('#start-date').val();
+            const endDateStr = $('#end-date').val();
+            
+            // אם לא נבחרו תאריכים, כל המשחקים עוברים את הסינון
+            if (!startDateStr && !endDateStr) return true;
+            
+            try {
+                console.log("Testing date range for:", gameDate);
+                
+                // ניסיון להמיר את התאריך לאובייקט Date
+                // פיצול התאריך (אם הוא בפורמט dd/mm/yyyy)
+                let gameDateTime;
+                
+                if (typeof gameDate === 'string' && gameDate.includes('/')) {
+                    const parts = gameDate.split('/');
+                    if (parts.length === 3) {
+                        // בפורמט DD/MM/YYYY
+                        const day = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10) - 1; // חודשים ב-JS הם 0-11
+                        const year = parseInt(parts[2], 10);
+                        gameDateTime = new Date(year, month, day);
+                    } else {
+                        gameDateTime = new Date(gameDate);
+                    }
+                } else {
+                    gameDateTime = new Date(gameDate);
+                }
+                
+                console.log("Converted to date object:", gameDateTime);
+                
+                // סינון לפי תאריך התחלה
+                if (startDateStr) {
+                    const startDate = new Date(startDateStr);
+                    startDate.setHours(0, 0, 0, 0);
+                    console.log("Start date:", startDate);
+                    if (gameDateTime < startDate) {
+                        console.log("Date is before start date, filtering out");
+                        return false;
+                    }
+                }
+                
+                // סינון לפי תאריך סיום
+                if (endDateStr) {
+                    const endDate = new Date(endDateStr);
+                    endDate.setHours(23, 59, 59, 999);
+                    console.log("End date:", endDate);
+                    if (gameDateTime > endDate) {
+                        console.log("Date is after end date, filtering out");
+                        return false;
+                    }
+                }
+                
+                console.log("Date is in range, including");
+                // אם עברנו את כל הבדיקות, התאריך נמצא בטווח
+                return true;
+            } catch (e) {
+                console.error("שגיאה בבדיקת טווח תאריכים:", e, "עבור תאריך:", gameDate);
+                return true; // במקרה של שגיאה מחזירים true
+            }
+        }
+        
+        // פונקציה ליצירת כל הגרפים
+        function createAllCharts() {
+            console.log("Creating charts...");
+            
+            try {
+                // הצגת לוגיקת הטעינה
+                $('#stats-loading').show();
+                $('#charts-container').hide();
+                
+                // הצגת ערכי התאריכים שנבחרו
+                console.log("Selected date range:", $('#start-date').val(), "to", $('#end-date').val());
+                
+                // סינון הנתונים לפי טווח תאריכים
+                const filteredDates = [];
+                const filteredBalances = [];
+                const filteredTypes = [];
+                
+                // חישוב נתונים סטטיסטיים מסוננים
+                let tournamentsCount = 0;
+                let cashCount = 0;
+                let winsCount = 0;
+                let lossesCount = 0;
+                let tournamentBalance = 0;
+                let cashBalance = 0;
+                
+                // איסוף הנתונים לפי הפילטר - שימוש ב-data attribute
+                $('#chart3-data .game-date').each(function(index) {
+                    // קבל את התאריך המקורי מהשרת (לפני פורמוט)
+                    const rawDate = $(this).attr('data-raw-date');
+                    const displayDate = $(this).text();
+                    const gameBalance = parseFloat($('#chart3-data .game-balance').eq(index).text()) || 0;
+                    const gameType = $('#chart3-data .game-type').eq(index).text();
+                    
+                    console.log("Processing game:", {
+                        rawDate: rawDate,
+                        displayDate: displayDate,
+                        balance: gameBalance,
+                        type: gameType
+                    });
+                    
+                    // בדיקה אם המשחק בטווח התאריכים - שימוש בתאריך המקורי
+                    if (isGameInDateRange(rawDate)) {
+                        console.log("Game is in date range, adding to filtered data");
+                        
+                        filteredDates.push(displayDate);
+                        filteredBalances.push(gameBalance);
+                        filteredTypes.push(gameType);
+                        
+                        // עדכון מונים
+                        if (gameType === 'טורניר') {
+                            tournamentsCount++;
+                            tournamentBalance += gameBalance;
+                        } else if (gameType === 'קאש') {
+                            cashCount++;
+                            cashBalance += gameBalance;
+                        }
+                        
+                        if (gameBalance >= 0) {
+                            winsCount++;
+                        } else {
+                            lossesCount++;
+                        }
+                    } else {
+                        console.log("Game is NOT in date range, filtering out");
+                    }
+                });
+                
+                console.log("Filtered data:", {
+                    dates: filteredDates.length,
+                    tournaments: tournamentsCount,
+                    cash: cashCount,
+                    wins: winsCount,
+                    losses: lossesCount
+                });
+                
+                // יצירת גרף 1 - התפלגות סוגי משחקים
+                const chart1El = document.getElementById('chart1');
+                if (chart1El) {
+                    console.log("Creating chart 1");
+                    new Chart(chart1El, {
+                        type: 'pie',
+                        data: {
+                            labels: ['טורנירים', 'משחקי קאש'],
+                            datasets: [{
+                                data: [tournamentsCount, cashCount],
+                                backgroundColor: ['#28a745', '#ffc107']
+                            }]
+                        }
+                    });
+                } else {
+                    console.error("Chart 1 element not found");
+                }
+                
+                // יצירת גרף 2 - התפלגות תוצאות
+                const chart2El = document.getElementById('chart2');
+                if (chart2El) {
+                    console.log("Creating chart 2");
+                    new Chart(chart2El, {
+                        type: 'bar',
+                        data: {
+                            labels: ['משחקים ברווח', 'משחקים בהפסד'],
+                            datasets: [{
+                                data: [winsCount, lossesCount],
+                                backgroundColor: ['#28a745', '#dc3545']
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    console.error("Chart 2 element not found");
+                }
+                
+                // יצירת גרף 3 - מגמת באלנס
+                const chart3El = document.getElementById('chart3');
+                if (chart3El && filteredDates.length > 0 && filteredBalances.length > 0) {
+                    console.log("Creating chart 3");
+                    new Chart(chart3El, {
+                        type: 'line',
+                        data: {
+                            labels: filteredDates,
+                            datasets: [{
+                                label: 'באלנס',
+                                data: filteredBalances,
+                                borderColor: '#0d6efd',
+                                backgroundColor: 'rgba(13, 110, 253, 0.1)', 
+                                fill: true
+                            }]
+                        }
+                    });
+                } else {
+                    console.error("Chart 3 element not found or data missing", {
+                        elementExists: !!chart3El,
+                        datesLength: filteredDates.length,
+                        balancesLength: filteredBalances.length
+                    });
+                }
+                
+                // יצירת גרף 4 - השוואת מאזן לפי סוג משחק
+                const chart4El = document.getElementById('chart4');
+                if (chart4El) {
+                    console.log("Creating chart 4");
+                    new Chart(chart4El, {
+                        type: 'bar',
+                        data: {
+                            labels: ['טורנירים', 'משחקי קאש', 'סך הכל'],
+                            datasets: [{
+                                label: 'מאזן (₪)',
+                                data: [tournamentBalance, cashBalance, tournamentBalance + cashBalance],
+                                backgroundColor: ['#28a745', '#ffc107', '#0d6efd']
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.raw.toLocaleString()} ₪`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    console.error("Chart 4 element not found");
+                }
+                
+                // הסתרת לוגיקת הטעינה והצגת הגרפים
+                $('#stats-loading').hide();
+                $('#charts-container').show();
+                
+                console.log("Charts created successfully");
+            } catch (error) {
+                console.error("Error creating charts:", error);
+                // במקרה של שגיאה עדיין ננסה להציג את הקונטיינר
+                $('#stats-loading').hide();
+                $('#charts-container').show();
+            }
+        }
+    });
+</script>
+{% endblock %}

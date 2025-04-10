@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mt-4 mb-4"><i class="fas fa-calendar-alt me-2"></i>ניהול מחזורי תשלום</h1>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>מחזור נוכחי</h5>
+            </div>
+            <div class="card-body">
+                {% if current_cycle %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4>{{ current_cycle.name }}</h4>
+                        <p class="text-muted">{{ current_cycle.start_date }} - {{ current_cycle.end_date }}</p>
+                    </div>
+                    <div class="d-flex">
+                        <a href="{{ url_for('prev_cycle') }}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-chevron-right me-1"></i>
+                            מחזור קודם
+                        </a>
+                        <a href="{{ url_for('next_cycle') }}" class="btn btn-outline-primary">
+                            מחזור הבא
+                            <i class="fas fa-chevron-left me-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    לא נמצא מחזור פעיל. יש ליצור מחזור חדש או להגדיר מחזור קיים כפעיל.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">רשימת מחזורים</h5>
+                <form action="{{ url_for('add_cycle') }}" method="post">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> יצירת מחזור חדש
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>שם מחזור</th>
+                                <th>תאריך התחלה</th>
+                                <th>תאריך סיום</th>
+                                <th>סטטוס</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cycle in cycles %}
+                            <tr class="{{ 'table-primary' if cycle.active else '' }}">
+                                <td>{{ cycle.name }}</td>
+                                <td>{{ cycle.start_date }}</td>
+                                <td>{{ cycle.end_date }}</td>
+                                <td>
+                                    {% if cycle.active %}
+                                    <span class="badge bg-success">מחזור נוכחי</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">לא פעיל</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not cycle.active %}
+                                    <form action="{{ url_for('set_active_cycle', cycle_id=cycle.id) }}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-check me-1"></i> הגדר כמחזור נוכחי
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not cycles %}
+                <div class="alert alert-info">
+                    לא נמצאו מחזורים. לחץ על "יצירת מחזור חדש" כדי להתחיל.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

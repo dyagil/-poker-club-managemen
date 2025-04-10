@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-user-edit me-2"></i>עריכת משתמש</h1>
+    <a href="{{ url_for('users') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לרשימת המשתמשים
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- שם משתמש (לא ניתן לשינוי) -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">שם משתמש</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" readonly>
+                        <div class="form-text">
+                            שם המשתמש אינו ניתן לשינוי.
+                        </div>
+                    </div>
+                    
+                    <!-- סיסמה (אופציונלי לשינוי) -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">סיסמה חדשה (השאר ריק כדי לשמור על הסיסמה הנוכחית)</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                        <div class="form-text">
+                            סיסמה חזקה מכילה לפחות 8 תווים, אותיות גדולות וקטנות, מספרים וסימנים מיוחדים.
+                        </div>
+                    </div>
+                    
+                    <!-- שם מלא -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label">שם מלא</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                    </div>
+                    
+                    <!-- תפקיד -->
+                    <div class="mb-3">
+                        <label for="role" class="form-label">תפקיד</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>מנהל מערכת</option>
+                            <option value="super_agent" {% if user.role == 'super_agent' %}selected{% endif %}>סופר-אייג'נט</option>
+                            <option value="agent" {% if user.role == 'agent' %}selected{% endif %}>אייג'נט</option>
+                        </select>
+                    </div>
+                    
+                    <!-- ישות משויכת (מוצג רק כאשר התפקיד הוא אייג'נט או סופר-אייג'נט) -->
+                    <div class="mb-3" id="entityContainer" style="display: {% if user.role in ['agent', 'super_agent'] %}block{% else %}none{% endif %};">
+                        <label for="entity_id" class="form-label">ישות משויכת</label>
+                        <select class="form-select" id="entity_id" name="entity_id" {% if user.role in ['agent', 'super_agent'] %}required{% endif %}>
+                            <option value="">בחר ישות...</option>
+                            
+                            <!-- אייג'נטים -->
+                            <optgroup label="אייג'נטים" id="agentGroup" style="display: {% if user.role == 'agent' %}block{% else %}none{% endif %};">
+                                {% for agent in agents %}
+                                <option value="{{ agent }}" {% if user.entity_id == agent %}selected{% endif %}>{{ agent }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            
+                            <!-- סופר-אייג'נטים -->
+                            <optgroup label="סופר-אייג'נטים" id="superAgentGroup" style="display: {% if user.role == 'super_agent' %}block{% else %}none{% endif %};">
+                                {% for super_agent in super_agents %}
+                                <option value="{{ super_agent }}" {% if user.entity_id == super_agent %}selected{% endif %}>{{ super_agent }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                        <div class="form-text">
+                            בחר את האייג'נט או הסופר-אייג'נט שאליו משתייך המשתמש.
+                        </div>
+                    </div>
+                    
+                    <!-- כפתורי שליחה וביטול -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('users') }}" class="btn btn-secondary">ביטול</a>
+                        <button type="submit" class="btn btn-primary">שמירת שינויים</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>הנחיות לעריכת משתמש</h5>
+            </div>
+            <div class="card-body">
+                <p>ניתן לערוך את הפרטים הבאים של המשתמש:</p>
+                <ul class="mb-3">
+                    <li><strong>שם מלא</strong> - השם שיוצג במערכת</li>
+                    <li><strong>סיסמה</strong> - אופציונלי, השאר ריק כדי לשמור על הסיסמה הנוכחית</li>
+                    <li><strong>תפקיד</strong> - הרשאות הגישה של המשתמש</li>
+                    <li><strong>ישות משויכת</strong> - האייג'נט או הסופר-אייג'נט שאליו משויך המשתמש</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    שינוי תפקיד ישפיע על הרשאות הגישה של המשתמש. יש לבחור ישות משויכת חדשה אם משנים תפקיד.
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    אם אתה מעדכן את הסיסמה, וודא שהמשתמש מודע לשינוי. לא ניתן לשחזר סיסמאות קודמות.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const entityContainer = document.getElementById('entityContainer');
+    const entitySelect = document.getElementById('entity_id');
+    const agentGroup = document.getElementById('agentGroup');
+    const superAgentGroup = document.getElementById('superAgentGroup');
+    
+    // עדכון שדה הישות בהתאם לתפקיד שנבחר
+    roleSelect.addEventListener('change', function() {
+        const selectedRole = roleSelect.value;
+        
+        if (selectedRole === 'agent') {
+            // הצגת הישויות מסוג אייג'נט
+            entityContainer.style.display = 'block';
+            agentGroup.style.display = 'block';
+            superAgentGroup.style.display = 'none';
+            entitySelect.required = true;
+        } else if (selectedRole === 'super_agent') {
+            // הצגת הישויות מסוג סופר-אייג'נט
+            entityContainer.style.display = 'block';
+            agentGroup.style.display = 'none';
+            superAgentGroup.style.display = 'block';
+            entitySelect.required = true;
+        } else {
+            // הסתרת שדה הישות
+            entityContainer.style.display = 'none';
+            entitySelect.required = false;
+            entitySelect.value = '';
+        }
+    });
+    
+    // בדיקת חוזק סיסמה
+    const passwordInput = document.getElementById('password');
+    
+    passwordInput.addEventListener('input', function() {
+        const password = passwordInput.value;
+        
+        // אם הסיסמה ריקה, לא מציגים משוב (משאירים את הסיסמה הנוכחית)
+        if (password.length === 0) {
+            const feedbackEl = passwordInput.nextElementSibling;
+            feedbackEl.className = 'form-text';
+            feedbackEl.textContent = 'השאר ריק כדי לשמור על הסיסמה הנוכחית.';
+            return;
+        }
+        
+        // בדיקת חוזק הסיסמה
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const isLongEnough = password.length >= 8;
+        
+        // חישוב ציון חוזק
+        let strength = 0;
+        if (hasUpperCase) strength++;
+        if (hasLowerCase) strength++;
+        if (hasNumbers) strength++;
+        if (hasSpecialChars) strength++;
+        if (isLongEnough) strength++;
+        
+        // עדכון משוב למשתמש
+        let feedbackClass = '';
+        let feedbackText = '';
+        
+        if (strength < 3) {
+            feedbackClass = 'text-danger';
+            feedbackText = 'סיסמה חלשה. הוסף אותיות גדולות, מספרים וסימנים מיוחדים.';
+        } else if (strength < 5) {
+            feedbackClass = 'text-warning';
+            feedbackText = 'סיסמה בינונית. שפר את הסיסמה להגברת האבטחה.';
+        } else {
+            feedbackClass = 'text-success';
+            feedbackText = 'סיסמה חזקה!';
+        }
+        
+        // עדכון ההודעה
+        const feedbackEl = passwordInput.nextElementSibling;
+        feedbackEl.className = 'form-text ' + feedbackClass;
+        feedbackEl.textContent = feedbackText;
+    });
+});
+</script>
+{% endblock %}

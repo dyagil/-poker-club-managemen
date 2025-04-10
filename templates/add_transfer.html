@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mt-4 mb-4"><i class="fas fa-random me-2"></i>רישום העברת כספים</h1>
+
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- מקור ההעברה (מי מעביר) -->
+                    <div class="mb-3">
+                        <label for="from_type" class="form-label">סוג הגורם המעביר</label>
+                        <select class="form-select" id="from_type" name="from_type" required>
+                            <option value="">בחר סוג גורם...</option>
+                            <option value="שחקן">שחקן</option>
+                            <option value="אייג'נט">אייג'נט</option>
+                            <option value="סופר-אייג'נט">סופר-אייג'נט</option>
+                            <option value="מועדון">מועדון</option>
+                            <option value="אחר">אחר</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="from_entity" class="form-label">שם/מזהה הגורם המעביר</label>
+                        <input type="text" class="form-control" id="from_entity" name="from_entity" required>
+                        <div class="form-text">הזן את שם האייג'נט, קוד השחקן או שם הגורם המעביר</div>
+                    </div>
+                    
+                    <!-- יעד ההעברה (מי מקבל) -->
+                    <div class="mb-3">
+                        <label for="to_type" class="form-label">סוג הגורם המקבל</label>
+                        <select class="form-select" id="to_type" name="to_type" required>
+                            <option value="">בחר סוג גורם...</option>
+                            <option value="שחקן">שחקן</option>
+                            <option value="אייג'נט">אייג'נט</option>
+                            <option value="סופר-אייג'נט">סופר-אייג'נט</option>
+                            <option value="מועדון">מועדון</option>
+                            <option value="אחר">אחר</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="to_entity" class="form-label">שם/מזהה הגורם המקבל</label>
+                        <input type="text" class="form-control" id="to_entity" name="to_entity" required>
+                        <div class="form-text">הזן את שם האייג'נט, קוד השחקן או שם הגורם המקבל</div>
+                    </div>
+                    
+                    <!-- סכום ההעברה -->
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">סכום ההעברה</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₪</span>
+                            <input type="number" class="form-control" id="amount" name="amount" required min="1" step="1">
+                        </div>
+                    </div>
+                    
+                    <!-- תאריך ההעברה -->
+                    <div class="mb-3">
+                        <label for="transfer_date" class="form-label">תאריך ההעברה</label>
+                        <input type="date" class="form-control" id="transfer_date" name="transfer_date">
+                    </div>
+                    
+                    <!-- הערות -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">הערות</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <!-- כפתורי שליחה וביטול -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('transfers') }}" class="btn btn-secondary">ביטול</a>
+                        <button type="submit" class="btn btn-primary">רישום ההעברה</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>הנחיות לרישום העברת כספים</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>בחר את סוג הגורם המעביר את הכסף (שחקן, אייג'נט, סופר-אייג'נט, מועדון)</li>
+                    <li>הזן את שם או מזהה הגורם המעביר (לדוגמה: שם האייג'נט, קוד השחקן)</li>
+                    <li>בחר את סוג הגורם המקבל את הכסף</li>
+                    <li>הזן את שם או מזהה הגורם המקבל</li>
+                    <li>הזן את סכום ההעברה</li>
+                    <li>בחר את תאריך ההעברה (ברירת המחדל היא היום)</li>
+                    <li>הוסף הערות רלוונטיות אם יש צורך (לדוגמה: סיבת ההעברה)</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>שים לב:</strong> העברות כספים משמשות לתיעוד תנועות כספים בין גורמים שונים במערכת, להבדיל מתשלומים רגילים המבוצעים על ידי שחקנים.
+                </div>
+            </div>
+        </div>
+        
+        {% if agents %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>רשימת אייג'נטים</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    {% for agent in agents %}
+                    <li>{{ agent }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if super_agents %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>רשימת סופר-אייג'נטים</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    {% for super_agent in super_agents %}
+                    <li>{{ super_agent }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // הגדרת תאריך ברירת מחדל לשדה תאריך ההעברה
+    const dateInput = document.getElementById('transfer_date');
+    if (dateInput) {
+        // הגדרת היום כברירת מחדל
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.value = formattedDate;
+    }
+
+    // עדכון רשימות הישויות בהתאם לסוג הנבחר
+    const fromTypeSelect = document.getElementById('from_type');
+    const toTypeSelect = document.getElementById('to_type');
+    const fromEntityInput = document.getElementById('from_entity');
+    const toEntityInput = document.getElementById('to_entity');
+    
+    // רשימות ישויות (ניתן להשלים מהשרת עם מידע נוסף)
+    const entities = {
+        'אייג\'נט': [{% for agent in agents %}'{{ agent }}',{% endfor %}],
+        'סופר-אייג\'נט': [{% for super_agent in super_agents %}'{{ super_agent }}',{% endfor %}],
+        'מועדון': ['מועדון']
+    };
+    
+    // פונקציה להצגת הצעות בהתאם לסוג הישות
+    function setupSuggestions(typeSelect, entityInput) {
+        typeSelect.addEventListener('change', function() {
+            const entityType = typeSelect.value;
+            
+            // נקה את הקלט הקודם
+            entityInput.value = '';
+            
+            // אם זה מועדון, הגדר ערך ברירת מחדל
+            if (entityType === 'מועדון') {
+                entityInput.value = 'מועדון';
+            }
+            
+            // הגדר רשימת הצעות אם יש
+            if (entities[entityType] && entities[entityType].length > 0) {
+                // יצירת רשימת הצעות (datalist)
+                let datalistId = entityInput.id + '-list';
+                let existingDatalist = document.getElementById(datalistId);
+                
+                if (!existingDatalist) {
+                    let datalist = document.createElement('datalist');
+                    datalist.id = datalistId;
+                    document.body.appendChild(datalist);
+                    entityInput.setAttribute('list', datalistId);
+                    existingDatalist = datalist;
+                }
+                
+                // ניקוי רשימה קודמת
+                existingDatalist.innerHTML = '';
+                
+                // הוספת אפשרויות לרשימה
+                entities[entityType].forEach(function(entity) {
+                    let option = document.createElement('option');
+                    option.value = entity;
+                    existingDatalist.appendChild(option);
+                });
+            }
+        });
+    }
+    
+    // הגדרת הצעות עבור שני השדות
+    setupSuggestions(fromTypeSelect, fromEntityInput);
+    setupSuggestions(toTypeSelect, toEntityInput);
+});
+</script>
+{% endblock %}

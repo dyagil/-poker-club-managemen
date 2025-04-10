@@ -1,0 +1,44 @@
+<!-- דוח שחקנים לאייג'נט -->
+{% if user_role == 'agent' and players_report is defined and players_report %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-primary">
+                    <i class="fas fa-users ms-2"></i> דו"ח שחקנים
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>קוד שחקן</th>
+                                <th>שם שחקן</th>
+                                <th>באלנס</th>
+                                <th>רייק</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in players_report %}
+                            <tr>
+                                <td>{{ player['קוד שחקן'] }}</td>
+                                <td>{{ player['שם שחקן'] }}</td>
+                                <td>{{ '%0.2f'|format(player['באלנס'])|replace('.', ',') }} ₪</td>
+                                <td>{{ '%0.2f'|format(player['רייק'])|replace('.', ',') }} ₪</td>
+                                <td>
+                                    <a href="{{ url_for('player_details', player_id=player['קוד שחקן']) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye ms-1"></i> הצג פרטים
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

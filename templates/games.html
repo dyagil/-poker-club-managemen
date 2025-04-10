@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-dice"></i> רשימת משחקים
+    </h1>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">כל המשחקים במערכת</h5>
+            <div>
+                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-filter"></i> סינון
+                </button>
+            </div>
+        </div>
+        
+        <div class="collapse" id="filterCollapse">
+            <div class="card-body bg-light">
+                <form id="filterForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="dateFrom" class="form-label">מתאריך</label>
+                        <input type="date" class="form-control" id="dateFrom">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateTo" class="form-label">עד תאריך</label>
+                        <input type="date" class="form-control" id="dateTo">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterAgentName" class="form-label">אייג'נט</label>
+                        <input type="text" class="form-control" id="filterAgentName">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterSuperAgentName" class="form-label">סופר-אייג'נט</label>
+                        <input type="text" class="form-control" id="filterSuperAgentName">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-primary" id="applyFilter">החל סינון</button>
+                        <button type="button" class="btn btn-secondary" id="resetFilter">איפוס</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped" id="gamesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>מספר משחק</th>
+                            <th>תאריך</th>
+                            <th>שם אייג'נט</th>
+                            <th>שם סופר-אייג'נט</th>
+                            <th>מספר שחקנים</th>
+                            <th>סה"כ רייק</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in games %}
+                        <tr>
+                            <td>{{ game.get('מספר משחק', '') }}</td>
+                            <td>{{ game.get('תאריך', '') }}</td>
+                            <td>{{ game.get('שם אייגנט', '') }}</td>
+                            <td>{{ game.get('שם סופר אייגנט', '') }}</td>
+                            <td>{{ game.get('מספר שחקנים', 0) }}</td>
+                            <td>{{ game.get('סהכ רייק', 0)|format_currency }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('game_details', game_id=game.get('מספר משחק', '')) }}" class="btn btn-info" title="צפייה בפרטי המשחק">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('add_adjustment', game_id=game.get('מספר משחק', '')) }}" 
+                                       class="btn btn-warning" title="הוספת התאמת באלנס למשחק">
+                                        <i class="fas fa-balance-scale"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if games|length == 0 %}
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i> לא נמצאו משחקים.
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer text-muted">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>סה"כ: {{ games|length }} משחקים</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('gamesTable');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const dateFromInput = document.getElementById('dateFrom');
+    const dateToInput = document.getElementById('dateTo');
+    const agentNameInput = document.getElementById('filterAgentName');
+    const superAgentNameInput = document.getElementById('filterSuperAgentName');
+    const applyFilterBtn = document.getElementById('applyFilter');
+    const resetFilterBtn = document.getElementById('resetFilter');
+    
+    // סינון הטבלה
+    function filterTable() {
+        const dateFrom = dateFromInput.value ? new Date(dateFromInput.value) : null;
+        const dateTo = dateToInput.value ? new Date(dateToInput.value) : null;
+        const agentName = agentNameInput.value.trim().toLowerCase();
+        const superAgentName = superAgentNameInput.value.trim().toLowerCase();
+        
+        rows.forEach(row => {
+            // הסתרת השורה תחילה
+            row.style.display = 'none';
+            
+            const cells = row.querySelectorAll('td');
+            const rowDate = cells[1].textContent.trim();
+            const rowDateParts = rowDate.split('/').reverse(); // להפוך את הפורמט לתאריך חוקי
+            const rowDateObj = rowDate ? new Date(rowDateParts.join('-')) : null;
+            
+            const rowAgentName = cells[2].textContent.trim().toLowerCase();
+            const rowSuperAgentName = cells[3].textContent.trim().toLowerCase();
+            
+            // בדיקת תאריך
+            let dateMatch = true;
+            if (dateFrom && rowDateObj && rowDateObj < dateFrom) {
+                dateMatch = false;
+            }
+            if (dateTo && rowDateObj && rowDateObj > dateTo) {
+                dateMatch = false;
+            }
+            
+            // בדיקת שמות
+            const agentMatch = !agentName || rowAgentName.includes(agentName);
+            const superAgentMatch = !superAgentName || rowSuperAgentName.includes(superAgentName);
+            
+            // הצגת השורה אם היא עומדת בכל התנאים
+            if (dateMatch && agentMatch && superAgentMatch) {
+                row.style.display = '';
+            }
+        });
+        
+        // עדכון המונה בתחתית הטבלה
+        const visibleRowCount = rows.filter(row => row.style.display !== 'none').length;
+        document.querySelector('.card-footer span').textContent = `סה"כ: ${visibleRowCount} משחקים מתוך ${rows.length}`;
+    }
+    
+    // איפוס הסינון
+    function resetFilter() {
+        dateFromInput.value = '';
+        dateToInput.value = '';
+        agentNameInput.value = '';
+        superAgentNameInput.value = '';
+        
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+        
+        document.querySelector('.card-footer span').textContent = `סה"כ: ${rows.length} משחקים`;
+    }
+    
+    // הוספת מאזינים לאירועים
+    applyFilterBtn.addEventListener('click', filterTable);
+    resetFilterBtn.addEventListener('click', resetFilter);
+});
+</script>
+{% endblock %}

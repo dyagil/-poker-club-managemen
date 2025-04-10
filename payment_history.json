@@ -1,0 +1,126 @@
+{
+    "payments": [
+        {
+            "player_id": "4406-1298",
+            "player_name": "רמי לואה",
+            "agent_name": "kasper2007",
+            "super_agent_name": "Pagsos",
+            "amount": 120.0,
+            "payment_date": "2025-02-26",
+            "method": "העברה בנקאית",
+            "notes": "ככעגכיעןגד",
+            "recorded_at": "2025-02-26 16:00:35",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "5892-2419",
+            "player_name": "פטרה טוני",
+            "agent_name": "Kinnel",
+            "super_agent_name": "muphassa",
+            "amount": 112.0,
+            "payment_date": "2025-02-26",
+            "method": "מזומן",
+            "notes": "",
+            "recorded_at": "2025-02-26 17:13:33",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "5685-6862",
+            "player_name": "DanielaP225",
+            "agent_name": "Kinnel",
+            "super_agent_name": "muphassa",
+            "amount": 1278.0,
+            "payment_date": "2025-02-26",
+            "method": "צ'ק",
+            "notes": "שילמה חלקי",
+            "recorded_at": "2025-02-26 18:58:46",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "1119-5035",
+            "player_name": "nu sa",
+            "agent_name": "kasper2007",
+            "super_agent_name": "Andy-Murray",
+            "amount": 345.0,
+            "payment_date": "2025-02-27",
+            "method": "מזומן",
+            "notes": "שילם אלוף",
+            "recorded_at": "2025-02-27 12:08:15",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "1761-6934",
+            "player_name": "avit1",
+            "agent_name": "Pagsos",
+            "super_agent_name": "Pagsos",
+            "amount": 1000.0,
+            "payment_date": "2025-02-27",
+            "method": "מזומן",
+            "notes": "",
+            "recorded_at": "2025-02-27 17:41:38",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "1761-6934",
+            "player_name": "avit1",
+            "agent_name": "Pagsos",
+            "super_agent_name": "Pagsos",
+            "amount": 1000.0,
+            "payment_date": "2025-02-28",
+            "method": "אחר",
+            "notes": "",
+            "recorded_at": "2025-02-28 07:56:38",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "5080-6038",
+            "player_name": "יוסי כהן",
+            "agent_name": "Pagsos",
+            "super_agent_name": "Pagsos",
+            "amount": 350.0,
+            "payment_date": "2025-03-02",
+            "method": "העברה בנקאית",
+            "notes": "",
+            "recorded_at": "2025-03-02 15:04:18",
+            "recorded_by": "admin"
+        },
+        {
+            "player_id": "4753-4288",
+            "player_name": "דוד",
+            "agent_name": "בעלים",
+            "super_agent_name": "בעלים",
+            "amount": 254.0,
+            "payment_date": "2025-04-07",
+            "method": "מזומן",
+            "notes": "",
+            "recorded_at": "2025-04-07 17:03:58",
+            "recorded_by": "admin"
+        }
+    ],
+    "transfers": [
+        {
+            "id": "c70365c6-b7e9-4dd6-aefb-d6d1aed05676",
+            "from_entity": "Riko2425",
+            "from_type": "סופר-אייג'נט",
+            "to_entity": "מועדון",
+            "to_type": "מועדון",
+            "amount": 2130.0,
+            "transfer_date": "2025-04-09",
+            "notes": "העברה על החשבון",
+            "recorded_at": "2025-04-09 11:18:13",
+            "recorded_by": "admin"
+        },
+        {
+            "id": "f5cd2498-1a70-42ab-bd70-b170992a13d4",
+            "from_entity": "Pagsos",
+            "from_type": "סופר-אייג'נט",
+            "to_entity": "Pro-Bet",
+            "to_type": "סופר-אייג'נט",
+            "amount": 587.0,
+            "transfer_date": "2025-04-09",
+            "notes": "",
+            "recorded_at": "2025-04-09 11:31:45",
+            "recorded_by": "admin"
+        }
+    ]
+}

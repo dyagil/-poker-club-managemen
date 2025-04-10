@@ -1,0 +1,72 @@
+<!-- דוח סופר-אייג'נטים למנהל מערכת -->
+{% if user_role == 'admin' and super_agents_report is defined and super_agents_report %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-primary">
+                    <i class="fas fa-users ms-2"></i> דו"ח סופר-אייג'נטים - סיכום גבייה
+                </h5>
+                <p class="text-muted mb-0 mt-2">
+                    <small>הדוח מציג את הסיכום הכולל של כל האייג'נטים והשחקנים תחת כל סופר-אייג'נט</small>
+                </p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>שם סופר אייג'נט</th>
+                                <th>באלנס</th>
+                                <th>רייק</th>
+                                <th>רייק באק שחקן</th>
+                                <th>רייק באק סוכן</th>
+                                <th>סך הכל לגביה</th>
+                                <th>שולם</th>
+                                <th>נותר לתשלום</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in super_agents_report %}
+                            <tr>
+                                <td>{{ agent['שם סופר אייגנט'] }}</td>
+                                <td>{{ agent['באלנס']|format_currency|safe }}</td>
+                                <td>{{ agent['רייק']|format_currency|safe }}</td>
+                                <td>{{ agent['רייק באק שחקן']|format_currency|safe }}</td>
+                                <td>{{ agent['רייק באק סוכן']|format_currency|safe }}</td>
+                                <td>{{ agent['סך הכל לגביה']|format_currency|safe }}</td>
+                                <td>{{ agent['שולם']|format_currency|safe }}</td>
+                                <td class="font-weight-bold {% if agent['נותר לתשלום'] > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ agent['נותר לתשלום']|format_currency|safe }}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('super_agent_details', super_agent_name=agent['שם סופר אייגנט']) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye ms-1"></i> הצג פרטים
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <!-- שורת סיכום של כל הנתונים -->
+                            {% if super_agents_report %}
+                            <tr class="table-secondary font-weight-bold">
+                                <td><strong>סה"כ</strong></td>
+                                <td>{{ super_agents_report|sum(attribute='באלנס')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='רייק')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='רייק באק שחקן')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='רייק באק סוכן')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='סך הכל לגביה')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='שולם')|format_currency|safe }}</td>
+                                <td>{{ super_agents_report|sum(attribute='נותר לתשלום')|format_currency|safe }}</td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

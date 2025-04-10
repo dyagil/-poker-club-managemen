@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-user-circle me-2"></i>פרופיל משתמש</h1>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לדשבורד
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>פרטי המשתמש</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">שם משתמש:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">{{ user.username }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">שם מלא:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">{{ user.name }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">תפקיד:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">{{ user.role_display }}</p>
+                    </div>
+                </div>
+                
+                {% if user.entity_id %}
+                <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">ישות מקושרת:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">
+                            {% if user.entity_type == 'player' %}
+                                <a href="{{ url_for('player_details', player_id=user.entity_id) }}">
+                                    <i class="fas fa-user me-1"></i> צפייה בפרטי השחקן
+                                </a>
+                            {% elif user.entity_type == 'agent' %}
+                                <a href="{{ url_for('agent_details', agent_id=user.entity_id) }}">
+                                    <i class="fas fa-user-tie me-1"></i> צפייה בפרטי הסוכן
+                                </a>
+                            {% elif user.entity_type == 'super_agent' %}
+                                <a href="{{ url_for('super_agent_details', super_agent_id=user.entity_id) }}">
+                                    <i class="fas fa-user-shield me-1"></i> צפייה בפרטי הסופר-סוכן
+                                </a>
+                            {% else %}
+                                לא מקושר לישות
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3 row">
+                    <label class="col-sm-4 col-form-label fw-bold">סטטוס:</label>
+                    <div class="col-sm-8">
+                        <p class="form-control-plaintext">
+                            {% if user.is_active %}
+                            <span class="badge bg-success">פעיל</span>
+                            {% else %}
+                            <span class="badge bg-danger">מושבת</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('users_bp.change_password') }}" class="btn btn-primary">
+                        <i class="fas fa-key me-1"></i> שנה סיסמה
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog me-2"></i>הגדרות חשבון</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>שלום {{ user.name }}!</strong> מכאן תוכל לנהל את הגדרות החשבון שלך ולשנות את הסיסמה שלך.
+                </div>
+                
+                <h6 class="mt-4 mb-3">מידע בטיחותי</h6>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    כדאי לשנות את הסיסמה שלך מדי פעם לצורכי אבטחה.
+                </div>
+                
+                <div class="alert alert-danger" id="passwordLastChanged" style="display: none;">
+                    <i class="fas fa-clock me-2"></i>
+                    הסיסמה שלך לא שונתה מזה יותר מ-90 יום. מומלץ לשנות אותה בהקדם.
+                </div>
+                
+                <div class="alert alert-success">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    הקפד לשמור על פרטי הכניסה שלך בסודיות ולהשתמש בסיסמה חזקה.
+                </div>
+            </div>
+        </div>
+        
+        {% if recent_activity %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>פעילות אחרונה</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for activity in recent_activity %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>
+                                <i class="fas {{ activity.icon }} me-2"></i>
+                                {{ activity.description }}
+                            </span>
+                            <small class="text-muted">{{ activity.date }}</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // פונקציה להצגת התראה אם הסיסמה לא שונתה מזה זמן רב
+    // להפעלה בעתיד כאשר נשמור מידע על מועד שינוי הסיסמה האחרון
+    /*
+    document.addEventListener('DOMContentLoaded', function() {
+        // בדיקה לדוגמה אם הסיסמה לא שונתה מעל 90 יום
+        const passwordLastChanged = new Date('2024-01-01'); // תאריך לדוגמה
+        const today = new Date();
+        const diffTime = Math.abs(today - passwordLastChanged);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays > 90) {
+            document.getElementById('passwordLastChanged').style.display = 'block';
+        }
+    });
+    */
+</script>
+{% endblock %}

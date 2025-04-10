@@ -1,0 +1,58 @@
+{
+    "users": [
+        {
+            "username": "admin",
+            "password": "pbkdf2:sha256:600000$k9E51gfAUlPWueuF$905d305cf1e0e4e47afd330bb4c25c8013f6d8f35f403bce6c8f80efcb26342f",
+            "role": "admin",
+            "name": "מנהל מערכת",
+            "entities": [],
+            "last_login": "2025-03-19 17:04:23"
+        },
+        {
+            "username": "bb",
+            "password": "pbkdf2:sha256:600000$FatDTYGBBQCbHgIX$668bd2d58e609f4613abd381f8e9fcc5a5d56fafee1bb98cfa21336407962be7",
+            "name": "bb the",
+            "role": "super_agent",
+            "entities": [
+                "Riko2425",
+                "Omaha4Rolz"
+            ],
+            "is_active": true,
+            "last_login": null
+        },
+        {
+            "username": "gh",
+            "password": "pbkdf2:sha256:600000$ghhLQUUZtm3uHuGn$f1609439bb17a7d2c23e6d43049236367ef5bfb4dffa753c326096339c4d06e7",
+            "name": "David yagil ",
+            "role": "super_agent",
+            "entities": [
+                "Doron2"
+            ],
+            "is_active": true,
+            "last_login": null
+        },
+        {
+            "username": "uu",
+            "password": "pbkdf2:sha256:600000$PNUnZHhifs0bPZKp$704313631301f248d17e8b735ead72601f9da52cc1a9165f55bcd774e78dcd0f",
+            "name": "דוד יגיל",
+            "role": "player",
+            "entities": [
+                "4753-4288"
+            ],
+            "is_active": true,
+            "last_login": null
+        },
+        {
+            "username": "mm",
+            "password": "pbkdf2:sha256:600000$ILRwcXbwN0kwTerS$0f0c625c15712a3e08afee0e6c042bd8384afa6b46fe1c9f0f53e696f81b79a3",
+            "name": "אילן קרטה",
+            "role": "player",
+            "entities": [
+                "2786-6715",
+                "1881-1458"
+            ],
+            "is_active": true,
+            "last_login": null
+        }
+    ]
+}

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}פרטי משחק{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>פרטי משחק #{{ game.get('מספר משחק', '') }}</h1>
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> חזרה
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">פרטי משחק בסיסיים</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <th>תאריך משחק</th>
+                                <td>{{ game.get('תאריך', '') }}</td>
+                            </tr>
+                            <tr>
+                                <th>באלנס</th>
+                                <td>{{ game.get('באלנס', 0)|format_currency|safe }}</td>
+                            </tr>
+                            <tr>
+                                <th>קוד שחקן</th>
+                                <td>
+                                    <a href="{{ url_for('player_details', player_id=game.get('קוד שחקן', '')) }}">
+                                        {{ game.get('קוד שחקן', '') }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>שם שחקן</th>
+                                <td>{{ game.get('שם שחקן', '') }}</td>
+                            </tr>
+                            <tr>
+                                <th>אייג'נט</th>
+                                <td>{{ game.get('שם אייגנט', '') }}</td>
+                            </tr>
+                            <tr>
+                                <th>סופר אייג'נט</th>
+                                <td>{{ game.get('שם סופר אייגנט', '') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">נתונים נוספים</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tbody>
+                            {% for key, value in game.items() %}
+                                {% if key not in ['מספר משחק', 'תאריך', 'באלנס', 'קוד שחקן', 'שם שחקן', 'שם אייגנט', 'שם סופר אייגנט'] %}
+                                <tr>
+                                    <th>{{ key }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                התאמות באלנס קשורות
+                <span class="badge bg-light text-dark">{{ adjustments|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if adjustments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>סכום</th>
+                                <th>סוג התאמה</th>
+                                <th>סיבה</th>
+                                <th>נרשם ע"י</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for adj in adjustments|sort(attribute='adjustment_date', reverse=true) %}
+                                <tr>
+                                    <td>{{ adj.adjustment_date|format_datetime }}</td>
+                                    <td class="{% if adj.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+                                        {{ adj.amount|format_currency|safe }}
+                                    </td>
+                                    <td>{{ adj.adjustment_type }}</td>
+                                    <td>{{ adj.reason }}</td>
+                                    <td>{{ adj.recorded_by|default('') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">אין התאמות באלנס קשורות למשחק זה.</div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="{{ url_for('add_adjustment', game_id=game.get('מספר משחק', '')) }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> הוסף התאמת באלנס
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

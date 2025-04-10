@@ -1,0 +1,27 @@
+הוסף את הקוד הבא בשורה 584, אחרי:
+# חשב את סך הכל לגביה
+for super_agent_name, data in super_agent_data.items():
+    data['סך הכל לגביה'] = data['באלנס'] + data['רייק'] + data['רייק באק שחקן'] + data['רייק באק סוכן']
+
+ולפני:
+# המר את מילון הסופר-אייג'נטים לרשימה לתצוגה
+super_agents_report = list(super_agent_data.values())
+
+------ קוד להוספה -------
+
+# הוסף את הסכומים ששולמו מהעברות כספים
+payment_history = load_payment_history()
+for transfer in payment_history.get('transfers', []):
+    super_agent_name = transfer.get('to_entity', '')
+    if super_agent_name in super_agent_data and transfer.get('to_type', '') == 'super_agent':
+        amount = transfer.get('amount', 0)
+        if isinstance(amount, str):
+            try:
+                amount = float(amount.replace(',', ''))
+            except (ValueError, TypeError):
+                amount = 0
+        super_agent_data[super_agent_name]['שולם'] += float(amount)
+
+# חשב את הסכום שנותר לתשלום
+for super_agent_name, data in super_agent_data.items():
+    data['נותר לתשלום'] = data['סך הכל לגביה'] - data['שולם']

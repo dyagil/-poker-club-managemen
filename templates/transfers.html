@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mt-4 mb-4"><i class="fas fa-exchange-alt me-2"></i>רשימת העברות כספים</h1>
+
+{% include 'cycle_nav.html' %}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        {% if current_cycle %}
+        <h5 class="mb-0">העברות כספים למחזור: {{ current_cycle.name }}</h5>
+        {% else %}
+        <h5 class="mb-0">העברות כספים</h5>
+        {% endif %}
+        <div class="d-flex">
+            <div class="input-group me-2" style="max-width: 300px;">
+                <input type="text" class="form-control" id="transferSearch" placeholder="חיפוש...">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <a href="{{ url_for('add_transfer') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> הוספת העברה
+            </a>
+            {% if user_role == 'admin' %}
+            <!-- כפתור מחיקת כל ההעברות -->
+            <button type="button" class="btn btn-danger btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#deleteAllTransfersModal">
+                <i class="fas fa-trash-alt me-1"></i> מחק הכל
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if transfers %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="transfersTable">
+                <thead>
+                    <tr>
+                        <th>תאריך העברה</th>
+                        <th>מ-</th>
+                        <th>אל-</th>
+                        <th>סכום</th>
+                        <th>הערות</th>
+                        <th>נרשם ע"י</th>
+                        <th>תאריך רישום</th>
+                        {% if user_role == 'admin' %}
+                        <th>פעולות</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in transfers %}
+                    <tr>
+                        <td>{{ transfer.transfer_date|format_datetime }}</td>
+                        <td>{{ transfer.from_type }}: {{ transfer.from_entity }}</td>
+                        <td>{{ transfer.to_type }}: {{ transfer.to_entity }}</td>
+                        <td>₪{{ '{:,}'.format(transfer.amount|int) }}</td>
+                        <td>{{ transfer.notes }}</td>
+                        <td>{{ transfer.recorded_by }}</td>
+                        <td>{{ transfer.recorded_at|format_datetime }}</td>
+                        {% if user_role == 'admin' %}
+                        <td>
+                            <!-- כפתור מחיקת העברה בודדת -->
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteTransferModal" 
+                                    data-transfer-id="{{ transfer.id }}"
+                                    data-transfer-details="{{ transfer.from_type }}: {{ transfer.from_entity }} אל {{ transfer.to_type }}: {{ transfer.to_entity }} - ₪{{ '{:,}'.format(transfer.amount|int) }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            לא נמצאו העברות כספים.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- מודל אישור מחיקת העברה בודדת -->
+<div class="modal fade" id="deleteTransferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">אישור מחיקה</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>האם אתה בטוח שברצונך למחוק את העברת הכספים הבאה?</p>
+                <p id="transferDetails" class="fw-bold text-danger"></p>
+                <p>פעולה זו אינה ניתנת לביטול.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                <form id="deleteTransferForm" method="POST" action="">
+                    <button type="submit" class="btn btn-danger">מחק</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- מודל אישור מחיקת כל ההעברות -->
+<div class="modal fade" id="deleteAllTransfersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">אישור מחיקה גורפת</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>אזהרה!</strong>
+                </div>
+                <p>האם אתה בטוח שברצונך למחוק את <strong>כל</strong> העברות הכספים?</p>
+                <p>פעולה זו תמחק את כל {{ transfers|length }} ההעברות הקיימות במערכת!</p>
+                <p>פעולה זו אינה ניתנת לביטול.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                <form method="POST" action="{{ url_for('delete_all_transfers') }}">
+                    <button type="submit" class="btn btn-danger">מחק הכל</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// חיפוש בטבלת העברות
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('transferSearch');
+    const table = document.getElementById('transfersTable');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) { // מתחיל מ-1 כדי לדלג על שורת הכותרת
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    const cellText = cells[j].textContent.toLowerCase();
+                    
+                    if (cellText.includes(searchTerm)) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = found ? '' : 'none';
+            }
+        });
+    }
+    
+    // הגדרת מודל מחיקת העברה בודדת
+    const deleteTransferModal = document.getElementById('deleteTransferModal');
+    if (deleteTransferModal) {
+        deleteTransferModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const transferId = button.getAttribute('data-transfer-id');
+            const transferDetails = button.getAttribute('data-transfer-details');
+            
+            // עדכון פרטי ההעברה במודל
+            const detailsElement = deleteTransferModal.querySelector('#transferDetails');
+            detailsElement.textContent = transferDetails;
+            
+            // עדכון טופס המחיקה עם ה-URL הנכון
+            const form = deleteTransferModal.querySelector('#deleteTransferForm');
+            form.action = `/delete_transfer/${transferId}`;
+        });
+    }
+});
+</script>
+{% endblock %}

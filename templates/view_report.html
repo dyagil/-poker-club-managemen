@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-file-alt me-2"></i>צפייה בדוח: {{ sheet_name }}</h1>
+    <div>
+        <a href="{{ url_for('reports') }}" class="btn btn-secondary ms-2">
+            <i class="fas fa-arrow-right me-1"></i> חזרה לרשימת הדוחות
+        </a>
+        {% if user_role == 'admin' %}
+        <button class="btn btn-primary ms-2" onclick="printReport()">
+            <i class="fas fa-print me-1"></i> הדפסה
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="tableSearch" placeholder="חיפוש בטבלה...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <button class="btn btn-outline-primary" onclick="toggleAllColumns()">
+                    <i class="fas fa-columns me-1"></i> הצג/הסתר עמודות
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive" id="reportTableContainer">
+            {{ table|safe }}
+        </div>
+    </div>
+</div>
+
+<!-- אפשרויות לשליטה בעמודות -->
+<div class="card" id="columnToggleCard" style="display: none;">
+    <div class="card-header">
+        <h5>בחירת עמודות להצגה</h5>
+    </div>
+    <div class="card-body">
+        <div class="row" id="columnToggleContainer">
+            <!-- נמלא דינמית עם JavaScript -->
+        </div>
+        <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary" onclick="selectAllColumns()">בחר הכל</button>
+            <button class="btn btn-outline-secondary" onclick="deselectAllColumns()">בטל הכל</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let columns = [];
+let table;
+
+// פונקציה לחיפוש בטבלה
+function setupTableSearch() {
+    const searchInput = document.getElementById('tableSearch');
+    table = document.querySelector('#reportTableContainer table');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let found = false;
+                
+                cells.forEach(cell => {
+                    const cellText = cell.textContent.toLowerCase();
+                    if (cellText.includes(searchTerm)) {
+                        found = true;
+                    }
+                });
+                
+                row.style.display = found ? '' : 'none';
+            });
+        });
+    }
+}
+
+// פונקציה לבניית רשימת העמודות
+function buildColumnList() {
+    table = document.querySelector('#reportTableContainer table');
+    if (!table) return;
+    
+    const headerRow = table.querySelector('thead tr');
+    if (!headerRow) return;
+    
+    const headers = headerRow.querySelectorAll('th');
+    
+    columns = [];
+    headers.forEach((header, index) => {
+        columns.push({
+            index: index,
+            name: header.textContent.trim(),
+            visible: true
+        });
+    });
+}
+
+// הצגת/הסתרת העמודות
+function toggleColumnVisibility(columnIndex, visible) {
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cell = row.children[columnIndex];
+        if (cell) {
+            cell.style.display = visible ? '' : 'none';
+        }
+    });
+    
+    columns[columnIndex].visible = visible;
+}
+
+// הצגת/הסתרת כל העמודות
+function toggleAllColumns() {
+    const card = document.getElementById('columnToggleCard');
+    const container = document.getElementById('columnToggleContainer');
+    
+    if (card.style.display === 'none') {
+        // בניית רשימת העמודות אם עדיין לא נבנתה
+        if (columns.length === 0) {
+            buildColumnList();
+        }
+        
+        // ניקוי תוכן קודם
+        container.innerHTML = '';
+        
+        // הוספת שורות לכל עמודה
+        columns.forEach((column, index) => {
+            const columnDiv = document.createElement('div');
+            columnDiv.className = 'col-md-4 mb-2';
+            
+            const checkboxId = `column-${index}`;
+            
+            columnDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${column.visible ? 'checked' : ''}>
+                    <label class="form-check-label" for="${checkboxId}">
+                        ${column.name}
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(columnDiv);
+            
+            // הוספת אירוע שינוי לתיבת הסימון
+            const checkbox = document.getElementById(checkboxId);
+            checkbox.addEventListener('change', function() {
+                toggleColumnVisibility(index, this.checked);
+            });
+        });
+        
+        card.style.display = 'block';
+    } else {
+        card.style.display = 'none';
+    }
+}
+
+// בחירת כל העמודות
+function selectAllColumns() {
+    columns.forEach((column, index) => {
+        const checkbox = document.getElementById(`column-${index}`);
+        if (checkbox) {
+            checkbox.checked = true;
+            toggleColumnVisibility(index, true);
+        }
+    });
+}
+
+// ביטול בחירת כל העמודות
+function deselectAllColumns() {
+    columns.forEach((column, index) => {
+        const checkbox = document.getElementById(`column-${index}`);
+        if (checkbox) {
+            checkbox.checked = false;
+            toggleColumnVisibility(index, false);
+        }
+    });
+}
+
+// הדפסת הדוח
+function printReport() {
+    const printWindow = window.open('', '_blank');
+    const tableHtml = document.getElementById('reportTableContainer').innerHTML;
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>דוח: ${document.title}</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    padding: 20px;
+                }
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: right;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>דוח: ${document.title}</h1>
+            <div>
+                ${tableHtml}
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+}
+
+// הרצת הפונקציות בטעינת העמוד
+document.addEventListener('DOMContentLoaded', function() {
+    setupTableSearch();
+    buildColumnList();
+    
+    // הוספת זיהוי לטבלה
+    const reportTable = document.querySelector('#reportTableContainer table');
+    if (reportTable) {
+        reportTable.id = 'reportDataTable';
+        reportTable.classList.add('table', 'table-striped', 'table-bordered', 'table-hover');
+    }
+});
+</script>
+{% endblock %}

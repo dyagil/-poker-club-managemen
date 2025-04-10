@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-balance-scale"></i> הוספת התאמת באלנס
+    </h1>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">טופס הוספת התאמת באלנס</h5>
+        </div>
+        
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('add_adjustment') }}">
+                <div class="row g-3">
+                    <!-- שחקן -->
+                    <div class="col-md-4">
+                        <label for="player_id" class="form-label">שחקן</label>
+                        <select class="form-select" id="player_id" name="player_id" required>
+                            <option value="">בחר שחקן</option>
+                            {% for player in players %}
+                            <option value="{{ player.get('קוד שחקן', '') }}">
+                                {{ player.get('שם שחקן', '') }} ({{ player.get('קוד שחקן', '') }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- סכום -->
+                    <div class="col-md-4">
+                        <label for="amount" class="form-label">סכום</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                            <span class="input-group-text">₪</span>
+                        </div>
+                        <small class="form-text text-muted">הערכים יכולים להיות חיוביים או שליליים</small>
+                    </div>
+                    
+                    <!-- משחק (אופציונלי) -->
+                    <div class="col-md-4">
+                        <label for="game_id" class="form-label">משחק (אופציונלי)</label>
+                        <select class="form-select" id="game_id" name="game_id">
+                            <option value="">ללא קשר למשחק ספציפי</option>
+                            {% for game in games %}
+                            <option value="{{ game.get('מספר משחק', '') }}" 
+                                {% if request.args.get('game_id') == game.get('מספר משחק', '')|string %}selected{% endif %}>
+                                משחק {{ game.get('מספר משחק', '') }} - {{ game.get('תאריך', '') }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- אייג'נט -->
+                    <div class="col-md-6">
+                        <label for="agent_name" class="form-label">אייג'נט</label>
+                        <select class="form-select" id="agent_name" name="agent_name" required>
+                            <option value="">בחר אייג'נט</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent }}">{{ agent }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- סופר-אייג'נט -->
+                    <div class="col-md-6">
+                        <label for="super_agent_name" class="form-label">סופר-אייג'נט</label>
+                        <select class="form-select" id="super_agent_name" name="super_agent_name" required>
+                            <option value="">בחר סופר-אייג'נט</option>
+                            {% for super_agent in super_agents %}
+                            <option value="{{ super_agent }}">{{ super_agent }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- הערות -->
+                    <div class="col-12">
+                        <label for="notes" class="form-label">הערות</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="הוסף פרטים נוספים או הסבר להתאמה..."></textarea>
+                    </div>
+                    
+                    <div class="col-12 text-end mt-4">
+                        <a href="{{ url_for('adjustments') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times"></i> ביטול
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> שמור התאמה
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // פונקציה עזר לסינון רשימה נגללת
+    const setupFilterableSelect = (selectId) => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        
+        // יצירת אלמנט החיפוש
+        const searchBox = document.createElement('input');
+        searchBox.type = 'text';
+        searchBox.className = 'form-control mb-2';
+        searchBox.placeholder = 'חיפוש...';
+        
+        // הוספת אלמנט החיפוש לפני הרשימה הנגללת
+        select.parentNode.insertBefore(searchBox, select);
+        
+        // שמירת כל האפשרויות המקוריות
+        const options = Array.from(select.options);
+        
+        // הוספת מאזין לשינויים בתיבת החיפוש
+        searchBox.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            
+            // איפוס הרשימה הנגללת
+            select.innerHTML = '';
+            
+            // הוספת האפשרויות המתאימות לחיפוש
+            options.forEach(option => {
+                if (option.text.toLowerCase().includes(filter)) {
+                    select.appendChild(option.cloneNode(true));
+                }
+            });
+        });
+    };
+    
+    // הפעלת פונקציית הסינון על הרשימות הנגללות
+    setupFilterableSelect('player_id');
+    setupFilterableSelect('game_id');
+    setupFilterableSelect('agent_name');
+    setupFilterableSelect('super_agent_name');
+    
+    // אם יש משחק שהועבר כפרמטר, יש להביא את פרטי האייג'נט והסופר-אייג'נט המתאימים
+    const gameIdSelect = document.getElementById('game_id');
+    gameIdSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (!selectedOption.value) return;
+        
+        // נחפש את המשחק הנבחר בדף ונשלוף ממנו את פרטי האייג'נט והסופר-אייג'נט
+        // זה עובד רק אם יש לנו את הנתונים של המשחק בדף HTML
+        const gameRows = document.querySelectorAll('#gamesTable tbody tr');
+        for (const row of gameRows) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0 && cells[0].textContent.trim() === selectedOption.value) {
+                // שינוי האייג'נט והסופר-אייג'נט לפי הנתונים במשחק
+                const agentName = cells[2].textContent.trim();
+                const superAgentName = cells[3].textContent.trim();
+                
+                document.getElementById('agent_name').value = agentName;
+                document.getElementById('super_agent_name').value = superAgentName;
+                break;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

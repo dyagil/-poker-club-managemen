@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+    <h1><i class="fas fa-user-shield me-2"></i>פרטי סופר-אייג'נט</h1>
+    <a href="{{ url_for('super_agents') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right me-1"></i> חזרה לרשימת הסופר-אייג'נטים
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>פרטי סופר-אייג'נט</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div style="width: 100px; height: 100px; background-color: #e9ecef; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 3rem; color: #6c757d;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h4 class="mt-3">{{ super_agent.name }}</h4>
+                </div>
+                
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>מספר אייג'נטים</span>
+                        <span class="fw-bold">{{ super_agent.agents_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>מספר שחקנים</span>
+                        <span class="fw-bold">{{ super_agent.players_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>סה"כ לגבייה</span>
+                        <span class="fw-bold text-danger">{{ super_agent.total_to_collect|format_currency|safe }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>סה"כ תשלומים</span>
+                        <span class="fw-bold">{{ total_paid|format_currency|safe }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>סטטיסטיקה</h5>
+            </div>
+            <div class="card-body">
+                {% if agents|length > 1 %}
+                <div style="height: 200px;">
+                    <canvas id="agentsDistributionChart"></canvas>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין מספיק נתונים להצגת סטטיסטיקה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- טבלת דוח אייג'נטים מפורטת -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>דוח אייג'נטים מפורט</h5>
+                <div class="d-flex">
+                    <a href="{{ url_for('export_super_agent_excel', super_agent_name=super_agent.name) }}" class="btn btn-success btn-sm ms-2">
+                        <i class="fas fa-file-excel me-1"></i> ייצוא לאקסל
+                    </a>
+                    <div class="input-group" style="max-width: 200px;">
+                        <input type="text" class="form-control form-control-sm" id="agentReportSearch" placeholder="חיפוש אייג'נט...">
+                        <button class="btn btn-outline-secondary btn-sm" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if agents_report %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-hover" id="agentsReportTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>שם אייג'נט</th>
+                                <th>שחקנים</th>
+                                <th>באלנס</th>
+                                <th>רייק</th>
+                                <th>רייק באק שחקן</th>
+                                <th>רייק באק סוכן</th>
+                                <th>סך הכל לגבייה</th>
+                                <th>שולם</th>
+                                <th>יתרה</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in agents_report %}
+                            <tr>
+                                <td>{{ agent.name }}</td>
+                                <td>{{ agent.players_count }}</td>
+                                <td>{{ agent.balance|format_currency|safe }}</td>
+                                <td>{{ agent.rake|format_currency|safe }}</td>
+                                <td>{{ agent.player_rakeback|format_currency|safe }}</td>
+                                <td>{{ agent.agent_rakeback|format_currency|safe }}</td>
+                                <td>{{ agent.total_to_collect|format_currency|safe }}</td>
+                                <td>{{ agent.paid|format_currency|safe }}</td>
+                                <td>{{ agent.remaining|format_currency|safe }}</td>
+                                <td>
+                                    <a href="{{ url_for('agent_details', agent_name=agent.name) }}" class="btn btn-sm btn-info text-white">
+                                        <i class="fas fa-eye"></i> צפייה
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <th>סה"כ</th>
+                                <th>{{ totals.players_count }}</th>
+                                <th>{{ totals.balance|format_currency|safe }}</th>
+                                <th>{{ totals.rake|format_currency|safe }}</th>
+                                <th>{{ totals.player_rakeback|format_currency|safe }}</th>
+                                <th>{{ totals.agent_rakeback|format_currency|safe }}</th>
+                                <th>{{ totals.total_to_collect|format_currency|safe }}</th>
+                                <th>{{ totals.paid|format_currency|safe }}</th>
+                                <th>{{ totals.remaining|format_currency|safe }}</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין נתונים זמינים לדוח.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>רשימת אייג'נטים</h5>
+                <div class="input-group" style="max-width: 200px;">
+                    <input type="text" class="form-control form-control-sm" id="agentSearch" placeholder="חיפוש אייג'נט...">
+                    <button class="btn btn-outline-secondary btn-sm" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if agents %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="agentsTable">
+                        <thead>
+                            <tr>
+                                <th>שם אייג'נט</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in agents %}
+                            <tr>
+                                <td>{{ agent }}</td>
+                                <td>
+                                    <a href="{{ url_for('agent_details', agent_name=agent) }}" class="btn btn-sm btn-info text-white">
+                                        <i class="fas fa-eye"></i> צפייה
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין אייג'נטים משויכים לסופר-אייג'נט זה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>היסטוריית תשלומים</h5>
+            </div>
+            <div class="card-body">
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>שחקן</th>
+                                <th>אייג'נט</th>
+                                <th>סכום</th>
+                                <th>אמצעי תשלום</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments|sort(attribute='payment_date', reverse=true) %}
+                            {% if loop.index <= 10 %}
+                            <tr>
+                                <td>{{ payment.payment_date|format_datetime }}</td>
+                                <td>{{ payment.player_name }}</td>
+                                <td>{{ payment.agent_name }}</td>
+                                <td>{{ payment.amount|format_currency|safe }}</td>
+                                <td>{{ payment.method }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if payments|length > 10 %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('payments') }}?super_agent={{ super_agent.name }}" class="btn btn-outline-primary btn-sm">
+                        צפייה בכל התשלומים <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    אין היסטוריית תשלומים לסופר-אייג'נט זה.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if payments|length > 5 %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5>גרף תשלומים לפי חודש</h5>
+    </div>
+    <div class="card-body">
+        <div style="height: 300px;">
+            <canvas id="paymentsMonthlyChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<!-- חיפוש בטבלאות -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // פונקציה לחיפוש בטבלה
+    function setupTableSearch(searchInputId, tableId, skipColumns = []) {
+        const searchInput = document.getElementById(searchInputId);
+        const table = document.getElementById(tableId);
+        
+        if (searchInput && table) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const rows = table.getElementsByTagName('tr');
+                
+                for (let i = 1; i < rows.length; i++) { // מתחיל מ-1 כדי לדלג על שורת הכותרת
+                    if (rows[i].parentNode.tagName === 'TFOOT') continue; // דילוג על רשומות בתחתית הטבלה
+                    
+                    const row = rows[i];
+                    const cells = row.getElementsByTagName('td');
+                    let found = false;
+                    
+                    for (let j = 0; j < cells.length; j++) {
+                        if (skipColumns.includes(j)) continue; // דילוג על עמודות מסוימות
+                        
+                        const cellText = cells[j].textContent.toLowerCase();
+                        
+                        if (cellText.includes(searchTerm)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    row.style.display = found ? '' : 'none';
+                }
+            });
+        }
+    }
+    
+    // הגדרת חיפוש בטבלאות
+    setupTableSearch('agentSearch', 'agentsTable', [1]); // דילוג על עמודת הפעולות
+    setupTableSearch('agentReportSearch', 'agentsReportTable', [9]); // דילוג על עמודת הפעולות
+    
+    // Chart.js - לגרף התפלגות אייג'נטים
+    {% if agents|length > 1 %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // יצירת גרף התפלגות אייג'נטים
+        const ctx = document.getElementById('agentsDistributionChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for agent in agents %}
+                    "{{ agent }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for agent in agents %}
+                        {{ 100 / agents|length }}, // לדוגמה - יש להחליף בנתונים אמיתיים
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 15
+                        }
+                    }
+                }
+            }
+        });
+    });
+    </script>
+    {% endif %}
+    
+    {% if payments|length > 5 %}
+    <!-- גרף תשלומים חודשי -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // עיבוד נתונים - קיבוץ לפי חודש
+        const payments = [
+            {% for payment in payments %}
+            {
+                date: '{{ payment.payment_date|format_datetime("%Y-%m") }}',
+                amount: {{ payment.amount|int }}
+            },
+            {% endfor %}
+        ];
+        
+        // קיבוץ לפי חודש
+        const monthlyData = {};
+        payments.forEach(payment => {
+            if (!monthlyData[payment.date]) {
+                monthlyData[payment.date] = 0;
+            }
+            monthlyData[payment.date] += payment.amount;
+        });
+        
+        // מיון לפי תאריך
+        const sortedMonths = Object.keys(monthlyData).sort();
+        
+        // יצירת נתונים לגרף
+        const labels = sortedMonths.map(date => {
+            const [year, month] = date.split('-');
+            return `${month}/${year}`;
+        });
+        
+        const data = sortedMonths.map(date => monthlyData[date]);
+        
+        // יצירת גרף
+        const ctx = document.getElementById('paymentsMonthlyChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'סה"כ תשלומים לפי חודש',
+                    data: data,
+                    fill: false,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    pointRadius: 5,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₪' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₪' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+    </script>
+    {% endif %}
+</script>
+{% endblock %}
